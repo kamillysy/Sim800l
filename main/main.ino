@@ -18,11 +18,13 @@ void setup() {
  // sim->sendSms("691525083","Arduino say hello");
  //Serial.println("Calling...");
  //sim->setPhoneFunctionality();
- //sim->callNumber("691525083");
+// sim->callNumber("500034953");
  
 // sim->endTask();
-sim->signalQuality();
-sim->productInformation();
+//sim->signalQuality();
+sim->configureGPRS();
+//sim->productInformation();
+
 //sim->getLocationApplication();
 //sim->endTask();
  

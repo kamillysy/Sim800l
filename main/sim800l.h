@@ -22,6 +22,7 @@ class Sim800l
   bool sendCommand(const String& command);
   void configureGPRS();
   void productInformation();
+  bool isSimReady();
   private:
   String readSerial();
   void debug(const String& info);

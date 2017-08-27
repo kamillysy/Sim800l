@@ -66,13 +66,22 @@ void Sim800l::signalQuality() {
   debug(readed);
   //Serial.println(readSerial());
 }
+bool Sim800l::isSimReady()
+{
+   if (sendCommand("AT+CPIN?"))
+   {
+      String resp = readSerial();
+      return (resp =="OK");
+   }
+   return false;
+}
 
 void Sim800l::callNumber(const String &phoneNumber)
 {
   String setNumber = "ATD" + phoneNumber+";";
   //sendCommand("ATD");
 
-  //snprintf(setNumber, 35, "+48%s\r\n", number);
+  debug("Calling on "+ phoneNumber);
   sendCommand(setNumber);
   String resp = readSerial();
   debug(resp.c_str());
@@ -83,31 +92,46 @@ void Sim800l::callNumber(const String &phoneNumber)
 }
 void Sim800l::configureGPRS()
 {
-  sendCommand("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
-   readResponse();
-
-
-
-    sendCommand("AT+SAPBR=3,1,\"APN\",\"internet\"");
-     readResponse();
-
-
-      sendCommand("AT+SAPBR=3,1,\"USER\",\"internet\"");
-       readResponse();
-
-
-        sendCommand("AT+SAPBR=3,1,\"PWD\",\"internet\"");
-          readResponse();
-
-
-          sendCommand("AT+SAPBR=2,1");
-            readResponse();
-
-
-            sendCommand("AT+FTPCID=1");
-              readResponse();
-            
+  sendCommand("AT+CSTT=\"internet\",\"\",\"\"");
+  String resp = readSerial();
+//  if(resp == "OK")
+//  {
+    sendCommand("AT+CIICR");
+    resp = readSerial();
+//    if(resp == "OK")
+//    {
+      sendCommand("AT+CIFSR");
+      resp = readSerial();
+      debug(resp);
+//    }
+    
+//  }
   
+  //sendCommand("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
+//   readResponse();
+//
+//
+//
+//    sendCommand("AT+SAPBR=3,1,\"APN\",\"internet\"");
+//     readResponse();
+//
+//
+//      sendCommand("AT+SAPBR=3,1,\"USER\",\"internet\"");
+//       readResponse();
+//
+//
+//        sendCommand("AT+SAPBR=3,1,\"PWD\",\"internet\"");
+//          readResponse();
+//
+//
+//          sendCommand("AT+SAPBR=2,1");
+//            readResponse();
+//
+//
+//            sendCommand("AT+FTPCID=1");
+//              readResponse();
+//            
+//  
 
 
 }
@@ -164,7 +188,7 @@ bool Sim800l::sendCommand(const String & command)
   serial->write(string.c_str());
   delay(10);
   string = readSerial();
-  //debug(string);
+  debug(string);
   if (string == command)
   {
     debug("sendCommand SUCCESED: " + command);

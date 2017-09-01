@@ -11,22 +11,8 @@ Sim800l* sim=NULL;
 SoftwareSerial serialToSim(SIM800_TX_PIN,SIM800_RX_PIN);
 void setup() {
   Serial.begin(9600);
-  //SoftwareSerial serialToSim(SIM800_TX_PIN,SIM800_RX_PIN);
   sim=new Sim800l(&serialToSim);
-  
-  //Serial.println("Sending SMS...");
- // sim->sendSms("691525083","Arduino say hello");
- //Serial.println("Calling...");
- //sim->setPhoneFunctionality();
- sim->listSMSes();
- // sim->endTask();
-//sim->signalQuality();
-//sim->configureGPRS();
-//sim->productInformation();
-
-//sim->getLocationApplication();
-//sim->endTask();
- 
+  //sim->sendSms("691525083","Arduino works!");
 }
  
 void loop() {

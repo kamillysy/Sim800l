@@ -13,16 +13,15 @@ void setup() {
   Serial.begin(9600);
   //SoftwareSerial serialToSim(SIM800_TX_PIN,SIM800_RX_PIN);
   sim=new Sim800l(&serialToSim);
-  Serial.println("Setup Complete!");
+  
   //Serial.println("Sending SMS...");
  // sim->sendSms("691525083","Arduino say hello");
  //Serial.println("Calling...");
  //sim->setPhoneFunctionality();
-// sim->callNumber("500034953");
- 
-// sim->endTask();
+ sim->listSMSes();
+ // sim->endTask();
 //sim->signalQuality();
-sim->configureGPRS();
+//sim->configureGPRS();
 //sim->productInformation();
 
 //sim->getLocationApplication();

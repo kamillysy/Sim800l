@@ -17,19 +17,21 @@ Sim800l::~Sim800l()
     delete serial;
 }
 
-//TODO NEED TO BE CLARYFIED
-int Sim800l::sendSms(const String &phoneNumber, const String &message)
+//TODO NEED TO BE VALIDATED
+bool Sim800l::sendSms(const String &phoneNumber, const String &message)
 {
-    sendCommand("AT+CMGF=1");
-    String setNumber = "AT+CMGS=\"+48" + phoneNumber + "\"";
-    sendCommand(setNumber);
-    sendCommand(message);
-    endTask();
-    String resp = "SMS resp: ";
-    resp += readSerial();
-    debug(resp.c_str());
-
-    return 0;
+    sendCommandWithEchoValidation("AT+CMGF=1");
+    String resp = readSerial();
+    if(resp.indexOf("OK") != -1)
+    {
+         String setNumber = "AT+CMGS=\"+48" + phoneNumber + "\"";
+         sendCommand(setNumber);
+         sendCommand(message);
+         endTask();
+         resp = readSerial();
+         return true;   
+    }
+    return false;
 }
 
 
@@ -44,33 +46,11 @@ int Sim800l::getCallStatus()
      3 Ringing (MT is ready for commands from TA/TE, but the ringer is active)
      4 Call in progress
      */
-    sendCommand("AT+CPAS");
+    sendCommandWithEchoValidation("AT+CPAS");
     String readed = readSerial();
     debug(readed);
     return 0; //readed.substring(readed.indexOf("+CPAS: ")+7,_buffer.indexOf("+CPAS: ")+9).toInt();
 
-}
-
-//TODO RESPONSE WALIDATE
-bool Sim800l::getStatus()
-{
-
-    if (sendCommand("at"))
-    {
-        String resp = readSerial();
-        //debug(resp.c_str());
-        if ((resp.indexOf("OK")) != -1)
-        {
-            //set echo mode
-            sendCommand("ATE1");
-            resp = readSerial();
-            debug(resp);
-            //TODO
-            return true;
-        }
-        return false;
-
-    }
 }
 
 /***********************
@@ -86,14 +66,14 @@ bool Sim800l::getStatus()
  **********************/
 void Sim800l::listSMSes()
 {
-    sendCommand("AT+CMGF=1");
+    sendCommandWithEchoValidation("AT+CMGF=1");
     String resp = readSerial();
-    sendCommand("AT+CMGL");
+    sendCommandWithEchoValidation("AT+CMGL");
     resp = readSerial();
 
     if (resp.indexOf("OK") != -1)
     {
-        sendCommand("AR+CMGL=ALL,0");
+        sendCommandWithEchoValidation("AR+CMGL=ALL,0");
         String resp = readSerial();
         debug(resp);
     }
@@ -116,40 +96,43 @@ void Sim800l::listSMSes()
 //TODO RETURNED VALUE && VALIDATE
 void Sim800l::signalQuality()
 {
-    sendCommand("AT+CSQ");
+    sendCommandWithEchoValidation("AT+CSQ");
     String readed = readSerial();
     debug(readed);
     //Serial.println(readSerial());
 }
-//TODO RETURNED VALUE && VALIDATE
-void Sim800l::callNumber(const String &phoneNumber)
+
+
+//TODO RETURNED VALUE 
+bool Sim800l::callNumber(const String &phoneNumber)
 {
     String setNumber = "ATD" + phoneNumber + ";";
     //sendCommand("ATD");
 
     debug("Calling on " + phoneNumber);
-    sendCommand(setNumber);
+    sendCommandWithEchoValidation(setNumber);
     String resp = readSerial();
-    debug(resp.c_str());
     if (resp == "OK")
     {
         delay(3000);
+        return true;
     }
-
+    debug(resp);
+    return false;
 }
 
 //TODO RETURNED VALUE && VALIDATE
 void Sim800l::configureGPRS()
 {
-    sendCommand("AT+CSTT=\"internet\",\"\",\"\"");
+    sendCommandWithEchoValidation("AT+CSTT=\"internet\",\"\",\"\"");
     String resp = readSerial();
     //  if(resp == "OK")
     //  {
-    sendCommand("AT+CIICR");
+    sendCommandWithEchoValidation("AT+CIICR");
     resp = readSerial();
     //    if(resp == "OK")
     //    {
-    sendCommand("AT+CIFSR");
+    sendCommandWithEchoValidation("AT+CIFSR");
     resp = readSerial();
     debug(resp);
     //    }
@@ -189,46 +172,53 @@ void Sim800l::configureGPRS()
 
 void Sim800l::getLocationApplication()
 {
-    sendCommand("AT+CIPGSMLOC=1,1");
+    sendCommandWithEchoValidation("AT+CIPGSMLOC=1,1");
     readResponse();
-    //String resp = readSerial();
-    //debug(resp.c_str());
-
 }
 //TODO VERYFY
 void Sim800l::productInformation()
 {
-    sendCommand("ATI");
+    sendCommandWithEchoValidation("ATI");
     readResponse();
 }
-//TODO RETURN STATUS VERYFY
+
+/*************************************
+*SEND STOP SEQUENCE                  *
+*NEED TO READ AND VALIDATE RESPONSE  *
+*************************************/
 void Sim800l::endTask()
 {
-    serial->write((char) 26);
-    String resp = readSerial();
-    debug(resp.c_str());
-    Serial.println("done");
+    String msg="";
+    msg.setCharAt(0, (char)26); 
+    sendCommand(msg); 
 }
 
-//TODO VERYFY
+//TODO VALIDATE
+/**************************************************************
+*setPhoneFunctionality                                        *
+*Parameters                                                   *
+*<fun> 0 Minimum functionality                                *
+*  1 Full functionality (Default)                             *
+*  4 Disable phone both transmit and receive RF circuits.     *
+*<rst> 1 Reset the MT before setting it to <fun> power level  *
+***************************************************************/
 void Sim800l::setPhoneFunctionality()
-{
-    /*AT+CFUN=<fun>[,<rst>]
-     Parameters
-     <fun> 0 Minimum functionality
-     1 Full functionality (Default)
-     4 Disable phone both transmit and receive RF circuits.
-     <rst> 1 Reset the MT before setting it to <fun> power level.
-     */
-    sendCommand("AT+CFUN=1");
-    String resp = readSerial();
-    debug(resp.c_str());
-    //SIM.print (F("AT+CFUN=1\r\n"));
+{  
+    if(sendCommandWithEchoValidation("AT+CFUN=1"))
+    {
+      String resp = readSerial();
+      if(resp.indexOf("OK") != -1)
+      {
+        return true;
+      }
+      debug(resp.c_str());
+    }
+   return false;
 }
 
 bool Sim800l::isSimReady()
 {
-    if (sendCommand("AT+CPIN?"))
+    if (sendCommandWithEchoValidation("AT+CPIN?"))
     {
         String resp = readSerial();
         return (resp == "OK");
@@ -236,6 +226,26 @@ bool Sim800l::isSimReady()
     return false;
 }
 
+bool Sim800l::getStatus()
+{
+
+    if (sendCommandWithEchoValidation("at"))
+    {
+        String resp = readSerial();
+        //debug(resp.c_str());
+        if(resp.indexOf("OK") != -1)
+        {
+            //set echo mode
+            sendCommandWithEchoValidation("ATE1");
+            resp = readSerial();
+            if(resp.indexOf("OK") != -1)
+            {
+              return true;
+            }
+        }
+    }
+     return false;
+}
 
 void Sim800l::readResponse()
 {
@@ -272,13 +282,10 @@ String Sim800l::readSerial()
     return ret;
 }
 
-bool Sim800l::sendCommand(const String & command)
+bool Sim800l::sendCommandWithEchoValidation(const String & command)
 {
-    String string = "";
-    string = command + "\r\n";
-    serial->write(string.c_str());
-    delay(10);
-    string = readSerial();
+    sendCommand(command);
+    String string = readSerial();
     debug(string);
     if (string == command)
     {
@@ -287,6 +294,14 @@ bool Sim800l::sendCommand(const String & command)
     }
     debug("sendCommand FAILED: " + command);
     return false;
+}
+
+void Sim800l::sendCommand(const String & command)
+{
+    String string = "";
+    string = command + "\r\n";
+    serial->write(string.c_str());
+    delay(10);
 }
 
 

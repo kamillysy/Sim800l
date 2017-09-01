@@ -9,6 +9,7 @@
 #include "sim800l.h"
 Sim800l* sim=NULL;
 SoftwareSerial serialToSim(SIM800_TX_PIN,SIM800_RX_PIN);
+
 void setup() {
   Serial.begin(9600);
   sim=new Sim800l(&serialToSim);

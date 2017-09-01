@@ -13,16 +13,16 @@ public:
     ;
     virtual ~Sim800l();
 
-    int sendSms(const String &phoneNumber, const String &message);
+    bool sendSms(const String &phoneNumber, const String &message);
     int readAt();
     void signalQuality();
     void readResponse();
-    bool getStatus();
+    
     void setPhoneFunctionality();
     void getLocationApplication();
-    void callNumber(const String &phoneNumber);
+    bool callNumber(const String &phoneNumber);
     void endTask();
-    bool sendCommand(const String& command);
+   
     void configureGPRS();
     void productInformation();
     bool isSimReady();
@@ -31,6 +31,9 @@ public:
 private:
     String readSerial();
     void debug(const String& info);
+    bool sendCommandWithEchoValidation(const String& command);
+    void sendCommand(const String& command);
+    bool getStatus();
 
     SoftwareSerial* serial;
 };

@@ -13,7 +13,7 @@ SoftwareSerial serialToSim(SIM800_TX_PIN,SIM800_RX_PIN);
 void setup() {
   Serial.begin(9600);
   sim=new Sim800l(&serialToSim);
-  //sim->sendSms("691525083","Arduino works!");
+  sim->sendSms("691525083","Arduino works!");
 }
  
 void loop() {

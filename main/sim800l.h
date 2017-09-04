@@ -2,6 +2,7 @@
 #define SIM800L_H
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+#include "sim800lHelpers.h"
 
 class Sim800l
 {
@@ -31,8 +32,7 @@ public:
 private:
     String readSerial();
     void debug(const String& info);
-    bool sendCommandWithEchoValidation(const String& command);
-    void sendCommand(const String& command);
+    bool sendCommand(const String& command,echoValidate validation=validate);
     bool getStatus();
 
     SoftwareSerial* serial;

@@ -2,24 +2,22 @@
 #define SIM800L_H
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include "sim800lHelpers.h"
+
 
 class Sim800l
 {
 public:
     Sim800l(SoftwareSerial *serialToSim800l);
-    Sim800l()
-    {
-    }
-    ;
+    Sim800l(){}
+    
     virtual ~Sim800l();
 
     bool sendSms(const String &phoneNumber, const String &message);
     int readAt();
-    void signalQuality();
+    int signalQuality();
     void readResponse();
     
-    void setPhoneFunctionality();
+    bool setPhoneFunctionality(phoneFunctionality funcionality=phoneFunctionality::full);
     void getLocationApplication();
     bool callNumber(const String &phoneNumber);
     void endTask();
@@ -32,7 +30,7 @@ public:
 private:
     String readSerial();
     void debug(const String& info);
-    bool sendCommand(const String& command,echoValidate validation=validate);
+    bool sendCommand(const String& command,echoValidate validation=echoValidate::validate);
     bool getStatus();
 
     SoftwareSerial* serial;

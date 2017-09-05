@@ -1,7 +1,6 @@
-#include "sim800l.h"
+
 #include "Arduino.h"
 #include <pins_arduino.h>
-
 Sim800l::Sim800l(SoftwareSerial *serialToSim800l)
 {
     serial = serialToSim800l;
@@ -100,7 +99,7 @@ void Sim800l::listSMSes()
      99 Not known or not detectable
      */
 //TODO RETURNED VALUE && VALIDATE
-void Sim800l::signalQuality()
+int Sim800l::signalQuality()
 {
     sendCommand("AT+CSQ");
     String readed = readSerial();
@@ -132,10 +131,12 @@ void Sim800l::configureGPRS()
 {
     sendCommand("AT+CSTT=\"internet\",\"\",\"\"");
     String resp = readSerial();
+    debug(resp);
     //  if(resp == "OK")
     //  {
     sendCommand("AT+CIICR");
     resp = readSerial();
+    debug(resp);
     //    if(resp == "OK")
     //    {
     sendCommand("AT+CIFSR");
@@ -179,13 +180,16 @@ void Sim800l::configureGPRS()
 void Sim800l::getLocationApplication()
 {
     sendCommand("AT+CIPGSMLOC=1,1");
-    readResponse();
+    String resp = readSerial();
+    debug(resp);
+    //readResponse();
 }
 //TODO VERYFY
 void Sim800l::productInformation()
 {
     sendCommand("ATI");
-    readResponse();
+    String resp = readSerial();
+    debug(resp);
 }
 
 /*************************************
@@ -197,6 +201,8 @@ void Sim800l::endTask()
     String msg="";
     msg.setCharAt(0, (char)26); 
     sendCommand(msg,nonValidation); 
+    String resp = readSerial();
+    debug(resp);
 }
 
 //TODO VALIDATE
@@ -208,9 +214,11 @@ void Sim800l::endTask()
 *  4 Disable phone both transmit and receive RF circuits.     *
 *<rst> 1 Reset the MT before setting it to <fun> power level  *
 ***************************************************************/
-void Sim800l::setPhoneFunctionality()
+bool Sim800l::setPhoneFunctionality(phoneFunctionality funcionality)
 {  
-    if(sendCommand("AT+CFUN=1"))
+    String command="AT+CFUN="+phoneFunctionalToString(funcionality);
+
+    if(sendCommand(command))
     {
       String resp = readSerial();
       if(resp.indexOf("OK") != -1)
@@ -315,4 +323,23 @@ void Sim800l::debug(const String & info)
     char message[n];
     snprintf(message, n, "DEBUG: %s", info.c_str());
     Serial.println(message);
+}
+
+String phoneFunctionalToString(phoneFunctionality functionality)
+{
+  String ret="";
+    switch(functionality)
+    {
+    case minimum:
+        ret="0";
+        break;
+    case full:
+         ret="1";
+        break;
+    case disable:
+        ret="4";
+        break;
+    }
+     ret="0";
+     return ret;
 }

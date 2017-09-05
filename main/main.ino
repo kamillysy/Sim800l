@@ -1,6 +1,5 @@
 
 #include <SoftwareSerial.h>
- 
 //SIM800 TX is connected to Arduino D8
 #define SIM800_TX_PIN 3
  
@@ -13,6 +12,12 @@ SoftwareSerial serialToSim(SIM800_TX_PIN,SIM800_RX_PIN);
 void setup() {
   Serial.begin(9600);
   sim=new Sim800l(&serialToSim);
+  delay(300);
+  sim->setPhoneFunctionality(phoneFunctionality::full);
+  sim->configureGPRS();
+  sim->productInformation();
+  sim->getCallStatus();
+  sim->listSMSes();
   sim->sendSms("691525083","Arduino works!");
 }
  

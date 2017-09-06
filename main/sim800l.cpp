@@ -1,15 +1,17 @@
 
 #include "Arduino.h"
 #include <pins_arduino.h>
+#include "sim800l.h"
 Sim800l::Sim800l(SoftwareSerial *serialToSim800l)
 {
     serial = serialToSim800l;
     serial->begin(9600);
     if (getStatus())
     {
+      String resp="";
       while(!isSimReady())
       {
-        delay(140);
+          delay(140);
       }
       return;
     }
@@ -131,18 +133,18 @@ void Sim800l::configureGPRS()
 {
     sendCommand("AT+CSTT=\"internet\",\"\",\"\"");
     String resp = readSerial();
-    debug(resp);
-    //  if(resp == "OK")
-    //  {
-    sendCommand("AT+CIICR");
-    resp = readSerial();
-    debug(resp);
+    //debug(resp);
+    if(resp == "OK")
+    {
+      sendCommand("AT+CIICR");
+      resp = readSerial();
+      debug(resp);
     //    if(resp == "OK")
     //    {
     sendCommand("AT+CIFSR");
     resp = readSerial();
     debug(resp);
-    //    }
+        }
 
     //  }
 
@@ -184,12 +186,12 @@ void Sim800l::getLocationApplication()
     debug(resp);
     //readResponse();
 }
-//TODO VERYFY
+
 void Sim800l::productInformation()
 {
     sendCommand("ATI");
     String resp = readSerial();
-    debug(resp);
+    debug("product information: " + resp);
 }
 
 /*************************************
@@ -236,7 +238,10 @@ bool Sim800l::isSimReady()
     {
         String resp = readSerial();
         debug(resp);
-        return (resp == "OK");
+        if(resp == "+CPIN: READY"){
+          resp = readSerial();
+          return (resp == "OK");
+        }
     }
     return false;
 }
@@ -247,9 +252,9 @@ bool Sim800l::getStatus()
     if (sendCommand("at"))
     {
         String resp = readSerial();
-        debug(resp.c_str());
-        //if(resp.indexOf("OK") != -1)
-       // {
+        //debug(resp.c_str());
+        if(resp.indexOf("OK") != -1)
+        {
             //set echo mode
             sendCommand("ATE1");
             resp = readSerial();
@@ -258,7 +263,7 @@ bool Sim800l::getStatus()
             {
               return true;
             }
-       // }
+        }
     }
      return false;
 }
@@ -279,14 +284,14 @@ String Sim800l::readSerial()
         delay(10);
         timeout++;
     }
-    while (serial->available())
+    for (;serial->available();delay(10))
     {
         readed = serial->read();
         if (readed == (char) 26 || readed == (char) 13)
         {
             break;
         }
-        if (readed > (char) 31)
+        if ((int)readed >  31)
         {
             ret += readed;
         }
@@ -306,7 +311,7 @@ bool Sim800l::sendCommand(const String & command ,echoValidate validation)
     serial->write(string.c_str());
     delay(10);
     string = readSerial();
-    debug(string);
+    //debug(string);
      if (string == command || validation)
     {
         debug("sendCommand SUCCESED: " + command);
@@ -330,16 +335,15 @@ String phoneFunctionalToString(phoneFunctionality functionality)
   String ret="";
     switch(functionality)
     {
-    case minimum:
+    case phoneFunctionality::minimum:
         ret="0";
         break;
-    case full:
+    case phoneFunctionality::full:
          ret="1";
         break;
-    case disable:
+    case phoneFunctionality::disable:
         ret="4";
         break;
     }
-     ret="0";
      return ret;
 }

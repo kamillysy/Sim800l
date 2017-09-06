@@ -2,7 +2,7 @@
 #define SIM800L_H
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-
+#include"sim800lHelpers.h"
 
 class Sim800l
 {

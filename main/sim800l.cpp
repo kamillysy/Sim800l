@@ -138,15 +138,15 @@ void Sim800l::configureGPRS()
     {
       sendCommand("AT+CIICR");
       resp = readSerial();
-      debug(resp);
-    //    if(resp == "OK")
-    //    {
-    sendCommand("AT+CIFSR");
-    resp = readSerial();
-    debug(resp);
-        }
+      //debug(resp);
+      if(resp == "OK")
+      {
+        sendCommand("AT+CIFSR");
+        resp = readSerial();
+        debug(resp);
+       }
 
-    //  }
+    }
 
     //sendCommand("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
     //   readResponse();
@@ -237,7 +237,7 @@ bool Sim800l::isSimReady()
     if (sendCommand("AT+CPIN?"))
     {
         String resp = readSerial();
-        debug(resp);
+        //debug(resp);
         if(resp == "+CPIN: READY"){
           resp = readSerial();
           return (resp == "OK");
@@ -258,7 +258,7 @@ bool Sim800l::getStatus()
             //set echo mode
             sendCommand("ATE1");
             resp = readSerial();
-            debug(resp);
+            //debug(resp);
             if(resp.indexOf("OK") != -1)
             {
               return true;
@@ -335,13 +335,13 @@ String phoneFunctionalToString(phoneFunctionality functionality)
   String ret="";
     switch(functionality)
     {
-    case phoneFunctionality::minimum:
+    case minimum:
         ret="0";
         break;
-    case phoneFunctionality::full:
+    case full:
          ret="1";
         break;
-    case phoneFunctionality::disable:
+    case disable:
         ret="4";
         break;
     }

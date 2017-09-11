@@ -17,7 +17,7 @@ public:
     int signalQuality();
     void readResponse();
     
-    bool setPhoneFunctionality(phoneFunctionality funcionality=phoneFunctionality::full);
+    bool setPhoneFunctionality(phoneFunctionality funcionality=full);
     void getLocationApplication();
     bool callNumber(const String &phoneNumber);
     void endTask();
@@ -30,7 +30,7 @@ public:
 private:
     String readSerial();
     void debug(const String& info);
-    bool sendCommand(const String& command,echoValidate validation=echoValidate::validate);
+    bool sendCommand(const String& command,echoValidate validation=validate);
     bool getStatus();
 
     SoftwareSerial* serial;

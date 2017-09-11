@@ -1,6 +1,7 @@
 #ifndef SIM800LHELPERS_H
 #define SIM800LHELPERS_H
 #include <Arduino.h>
+
 enum echoValidate{
   nonValidation=0,
   validate=1

@@ -13,7 +13,7 @@ void setup() {
   Serial.begin(9600);
   sim=new Sim800l(&serialToSim);
   delay(300);
-  sim->setPhoneFunctionality(phoneFunctionality::full);
+  sim->setPhoneFunctionality(full);
   sim->configureGPRS();
   sim->productInformation();
   sim->getCallStatus();

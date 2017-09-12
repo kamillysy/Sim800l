@@ -11,23 +11,27 @@ SoftwareSerial serialToSim(SIM800_TX_PIN,SIM800_RX_PIN);
 
 void setup() {
   Serial.begin(9600);
-  sim=new Sim800l(&serialToSim);
+//  sim=new Sim800l(&serialToSim);
   delay(300);
-  sim->setPhoneFunctionality(full);
-  sim->configureGPRS();
-  sim->productInformation();
-  sim->getCallStatus();
-  sim->listSMSes();
-  sim->sendSms("691525083","Arduino works!");
+ // sim->setPhoneFunctionality(full);
+//  sim->configureGPRS();
+  //sim->productInformation();
+  //String call(sim->getCallStatus());
+  //String msg="call status = " + call;
+  //Serial.println(msg.c_str());
+  //sim->listSMSes();
+//  sim->signalQuality();
 }
  
 void loop() {
   //Read SIM800 output (if available) and print it in Arduino IDE Serial Monitor
   if(serialToSim.available()){
     Serial.write(serialToSim.read());
+    
   }
   //Read Arduino IDE Serial Monitor inputs (if available) and send them to SIM800
-  if(serialToSim.available()){  
+  if(Serial.available()){  
     serialToSim.write(Serial.read());
+    
   }
 }

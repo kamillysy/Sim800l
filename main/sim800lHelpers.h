@@ -2,18 +2,17 @@
 #define SIM800LHELPERS_H
 #include <Arduino.h>
 
-enum echoValidate{
-  nonValidation=0,
-  validate=1
-};
+#define  nonValidation false
+#define validate true
+
 /**************************************************************
-*setPhoneFunctionality                                        *
-*Parameters                                                   *
-*<fun> 0 Minimum functionality                                *
-*  1 Full functionality (Default)                             *
-*  4 Disable phone both transmit and receive RF circuits.     *
-*<rst> 1 Reset the MT before setting it to <fun> power level  *
-***************************************************************/
+ *setPhoneFunctionality                                        *
+ *Parameters                                                   *
+ *<fun> 0 Minimum functionality                                *
+ *  1 Full functionality (Default)                             *
+ *  4 Disable phone both transmit and receive RF circuits.     *
+ *<rst> 1 Reset the MT before setting it to <fun> power level  *
+ ***************************************************************/
 enum phoneFunctionality{
     minimum=0,
     full=1,

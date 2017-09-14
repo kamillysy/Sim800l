@@ -11,10 +11,11 @@ SoftwareSerial serialToSim(SIM800_TX_PIN,SIM800_RX_PIN);
 
 void setup() {
   Serial.begin(9600);
-//  sim=new Sim800l(&serialToSim);
+  sim=new Sim800l(&serialToSim);
   delay(300);
- // sim->setPhoneFunctionality(full);
-//  sim->configureGPRS();
+  sim->setPhoneFunctionality(full);
+  sim->configureGPRS();
+ // sim->getLocationApplication();
   //sim->productInformation();
   //String call(sim->getCallStatus());
   //String msg="call status = " + call;

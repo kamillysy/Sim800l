@@ -17,11 +17,9 @@ Sim800l::Sim800l(SoftwareSerial *serialToSim800l)
         else if(!simReady)
         {
             simReady = isSimReady();
-
         }
         if(simReady && simStatus)
         {
-
             break;
         }
         delay(23);
@@ -64,7 +62,7 @@ int Sim800l::getCallStatus()
      values of return:
 
      0 Ready (MT allows commands from TA/TE)
-     2 Unknown (MT is not guaranteed to respond to tructions)
+     2 Unknown (MT is not guaranteed to respond to functions)
      3 Ringing (MT is ready for commands from TA/TE, but the ringer is active)
      4 Call in progress
      */
@@ -86,6 +84,7 @@ int Sim800l::getCallStatus()
  * 0 Normal
  * 1 Not change status of the specified SMS record
  **********************/
+//TODO veryfy what's exactly that mean?
 void Sim800l::listSMSes()
 {
     sendCommand("AT+CMGF=1");
@@ -99,7 +98,12 @@ void Sim800l::listSMSes()
         String resp = readSerial();
         debug(resp);
     }
+    else
+    {
+        debug("listSMSes received failed: " + resp);
+    }
 }
+
 
 
 /*Response
@@ -115,7 +119,9 @@ void Sim800l::listSMSes()
      subclause 7.2.4
      99 Not known or not detectable
  */
-//TODO RETURNED VALUE && VALIDATE
+
+//TODO RETURNED VALUE is an level , subclause write class/enum wich decode it
+//&& VALIDATE
 float Sim800l::signalQuality()
 {
     sendCommand("AT+CSQ");
@@ -145,7 +151,11 @@ bool Sim800l::callNumber(const String &phoneNumber)
         delay(3000);
         return true;
     }
-    debug(resp);
+    else
+    {
+        debug("caling flase returned " + resp);
+    }
+
     return false;
 }
 
@@ -154,45 +164,52 @@ void Sim800l::configureGPRS()
 {
     sendCommand("AT+CSTT=\"internet\",\"\",\"\"");
     String resp = readSerial();
-    //debug(resp);
     if(resp == "OK")
     {
-        sendCommand("AT+CIICR");
+        sendCommand("AT+CIICR");//Start wireless connection with the GPRS. 
         resp = readSerial();
-        //debug(resp);
         if(resp == "OK")
         {
-            sendCommand("AT+CIFSR");
+//            sendCommand("AT+CIFSR");/Gets the IP address assigned to the module
             resp = readSerial();
             debug(resp);
         }
-
+        else
+        {
+            debug("AT+CIICR received failed " + resp);
+        }
     }
+    else
+    {
+        debug("internet configuration received failed " + resp);
+    }
+    sendCommand("AT+SAPBR=3,1,\"PHONENUM\"\",\"*99#\"");
+             readResponse();
 
-    //sendCommand("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
-    //   readResponse();
+   
+
     //
     //
     //
-    //    sendCommand("AT+SAPBR=3,1,\"APN\",\"internet\"");
-    //     readResponse();
+        
+
+    //
+    //AT+CIPPING="www.onet.pl","4","32","100","64","12","",""
+
+
+          
     //
     //
-    //      sendCommand("AT+SAPBR=3,1,\"USER\",\"internet\"");
-    //       readResponse();
+            
     //
     //
-    //        sendCommand("AT+SAPBR=3,1,\"PWD\",\"internet\"");
-    //          readResponse();
+//              sendCommand("AT+SAPBR=2,1");
+//                readResponse();
     //
     //
-    //          sendCommand("AT+SAPBR=2,1");
-    //            readResponse();
-    //
-    //
-    //            sendCommand("AT+FTPCID=1");
-    //              readResponse();
-    //
+//                sendCommand("AT+FTPCID=1");
+//                  readResponse();
+//    //
     //
 
 }
@@ -202,7 +219,15 @@ void Sim800l::configureGPRS()
 
 void Sim800l::getLocationApplication()
 {
-    sendCommand("AT+CIPGSMLOC=1,1");
+   sendCommand("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
+       debug(readSerial());
+       sendCommand("AT+SAPBR=3,1,\"APN\",\"internet\"");
+       debug(readSerial());
+       sendCommand("AT+SAPBR =1,1");
+       debug(readSerial());
+       sendCommand("AT+SAPBR=2,1");
+       debug(readSerial());
+    sendCommand("AT+CIPGSMLOC=1");
     String resp = readSerial();
     debug(resp);
     //readResponse();
@@ -248,7 +273,7 @@ bool Sim800l::setPhoneFunctionality(phoneFunctionality funcionality)
         {
             return true;
         }
-        debug(resp.c_str());
+        debug("setPhoneFunctionality received failed " + resp);
     }
     return false;
 }
@@ -258,10 +283,11 @@ bool Sim800l::isSimReady()
     if (sendCommand("AT+CPIN?"))
     {
         String resp = readSerial();
-        //debug(resp);
         if(resp == "+CPIN: READY"){
             resp = readSerial();
-            return (resp == "OK");
+            if((resp == "OK"))
+                return true;
+            debug( "isSimReady received failed " + resp);
         }
     }
     return false;
@@ -285,6 +311,8 @@ bool Sim800l::getStatus()
                 return true;
             }
         }
+        debug("get status received failed " + resp);
+
     }
     return false;
 }

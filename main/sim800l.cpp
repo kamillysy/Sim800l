@@ -7,34 +7,53 @@ Sim800l::Sim800l(SoftwareSerial *serialToSim800l)
     serial = serialToSim800l;
     serial->begin(9600);
     String resp="";
-    bool simReady=false, simStatus=false;
+    bool moduleReady=false, simStatus=false, simConnected = false;
+    delay(300);
     for(unsigned counter=0;counter<10;counter++)
     {
         if(!simStatus)
         {
             simStatus = getStatus();
         }
-        else if(!simReady)
+        else if(!moduleReady)
         {
-            simReady = isSimReady();
+            moduleReady = isModuleReady();
         }
-        if(simReady && simStatus)
+        if(moduleReady && simStatus)
         {
+            simConnected = waitForSimConnected(1000);
             break;
         }
         delay(23);
     }
-    if(!simReady || !simStatus)
+    if(!moduleReady || !simStatus || !simConnected)
     {
         Serial.println("Something went wrong");
-    }       
+    }
 
 }
 Sim800l::~Sim800l()
 {
     delete serial;
 }
-
+bool Sim800l::waitForSimConnected(const unsigned int timeout)
+{
+  delay(300);
+  unsigned int del;
+  for(  del = 0; del<timeout; del+=13)
+  {
+    if(isSimReady())
+    {
+      return true;
+    }
+    else{
+      delay(13);   
+    }
+      
+  }
+  return false;
+   
+}
 //TODO NEED TO BE VALIDATED
 bool Sim800l::sendSms(const String &phoneNumber, const String &message)
 {
@@ -92,15 +111,11 @@ void Sim800l::listSMSes()
     sendCommand("AT+CMGL");
     resp = readSerial();
 
-    if (resp.indexOf("OK") != -1)
+    if (validateResponse("OK"))
     {
         sendCommand("AR+CMGL=ALL,0");
         String resp = readSerial();
         debug(resp);
-    }
-    else
-    {
-        debug("listSMSes received failed: " + resp);
     }
 }
 
@@ -129,7 +144,8 @@ float Sim800l::signalQuality()
     debug(readed);
     int pos = readed.indexOf(',');
     readed[pos]='.';
-    float ret=readed.substring(readed.indexOf("+CSQ: ")+6,readed.indexOf("+CPAS: ")+11).toFloat();
+    float ret;
+    readed.substring(readed.indexOf("+CSQ: ")+6,readed.indexOf("+CPAS: ")+11);//.toFloat();
     //readed(ret);
     debug(readed);
     return ret;
@@ -145,46 +161,39 @@ bool Sim800l::callNumber(const String &phoneNumber)
 
     debug("Calling on " + phoneNumber);
     sendCommand(setNumber);
-    String resp = readSerial();
-    if (resp == "OK")
+    if (validateResponse("OK"))
     {
         delay(3000);
         return true;
     }
-    else
-    {
-        debug("caling flase returned " + resp);
-    }
-
     return false;
+}
+void Sim800l::ping(String &host)
+{
+  String command = "AT+CIPPING=\""+ host + ",\"4\"";
+  sendCommand(command);
+  //AT+CIPPING="www.onet.pl","4","32","100","64","12","",""
+  debug(readSerial());
 }
 
 //TODO RETURNED VALUE && VALIDATE
-void Sim800l::configureGPRS()
+void Sim800l::configureInternet()
 {
     sendCommand("AT+CSTT=\"internet\",\"\",\"\"");
-    String resp = readSerial();
-    if(resp == "OK")
+    if(validateResponse("OK"))
     {
+        sendCommand("AT+SAPBR=3,1,\"PHONENUM\"\",\"*99#\"");
+        readResponse();
         sendCommand("AT+CIICR");//Start wireless connection with the GPRS. 
-        resp = readSerial();
-        if(resp == "OK")
+        if(validateResponse("OK"))
         {
-//            sendCommand("AT+CIFSR");/Gets the IP address assigned to the module
-            resp = readSerial();
-            debug(resp);
+            sendCommand("AT+CIFSR");//Gets the IP address assigned to the module
+            debug(readSerial());
         }
-        else
-        {
-            debug("AT+CIICR received failed " + resp);
-        }
+        
     }
-    else
-    {
-        debug("internet configuration received failed " + resp);
-    }
-    sendCommand("AT+SAPBR=3,1,\"PHONENUM\"\",\"*99#\"");
-             readResponse();
+    
+    
 
    
 
@@ -194,7 +203,7 @@ void Sim800l::configureGPRS()
         
 
     //
-    //AT+CIPPING="www.onet.pl","4","32","100","64","12","",""
+    //
 
 
           
@@ -214,23 +223,55 @@ void Sim800l::configureGPRS()
 
 }
 
+
 //VERYFY
 //TODO RETURNED VALUE && VALIDATE
 
+/*****
+ AT+SAPBR=3,1,"Con
+ OK
+type","GPRS"
+AT+SAPBR=3,1,"AP
+ OK
+N","CMWAP"
+AT+SAPBR=1,1
+ OK
+AT+SAPBR=2,1
+ +SAPBR: 1,1,"10.89.193.1"
+OK
+*////////
 void Sim800l::getLocationApplication()
 {
-   sendCommand("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
-       debug(readSerial());
+    sendCommand("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
+    if(validateResponse("OK"))
+    {
        sendCommand("AT+SAPBR=3,1,\"APN\",\"internet\"");
+       if(validateResponse("OK"))
+       {
+           sendCommand("AT+SAPBR =1,1");
+           validateResponse("OK");
+         
+           
+           sendCommand("AT+CIPGSMLOC=1,1");
+            debug(readSerial());
+            validateResponse("OK");
+            delay(250);
+           cloaseBearer();
+        }
+        else
+        {
+        debug(readSerial());
+        }
+    }
+    else
+    {
        debug(readSerial());
-       sendCommand("AT+SAPBR =1,1");
-       debug(readSerial());
-       sendCommand("AT+SAPBR=2,1");
-       debug(readSerial());
-    sendCommand("AT+CIPGSMLOC=1");
-    String resp = readSerial();
-    debug(resp);
+    }
     //readResponse();
+}
+void Sim800l::cloaseBearer(){
+  sendCommand("AT+SAPBR=0,1");
+  validateResponse("OK");
 }
 
 void Sim800l::productInformation()
@@ -268,29 +309,31 @@ bool Sim800l::setPhoneFunctionality(phoneFunctionality funcionality)
 
     if(sendCommand(command))
     {
+        return validateResponse("OK");
+    }
+    return false;
+}
+
+bool Sim800l::isModuleReady()
+{
+    if (sendCommand("AT+CPIN?"))
+    {
         String resp = readSerial();
-        if(resp.indexOf("OK") != -1)
-        {
-            return true;
-        }
-        debug("setPhoneFunctionality received failed " + resp);
+        return validateResponse("OK");
     }
     return false;
 }
 
 bool Sim800l::isSimReady()
 {
-    if (sendCommand("AT+CPIN?"))
-    {
-        String resp = readSerial();
-        if(resp == "+CPIN: READY"){
-            resp = readSerial();
-            if((resp == "OK"))
-                return true;
-            debug( "isSimReady received failed " + resp);
-        }
-    }
-    return false;
+  bool stat= false;
+  sendCommand("AT+CPAS", nonValidation);
+  delay(30);
+  stat= validateResponse("+CPAS: 0");
+  delay(30);
+  validateResponse("OK");
+  return stat;
+  
 }
 
 bool Sim800l::getStatus()
@@ -298,20 +341,15 @@ bool Sim800l::getStatus()
 
     if (sendCommand("at"))
     {
-        String resp = readSerial();
-        //debug(resp.c_str());
-        if(resp.indexOf("OK") != -1)
+        if(validateResponse("OK"))
         {
             //set echo mode
             sendCommand("ATE1");
-            resp = readSerial();
-            //debug(resp);
-            if(resp.indexOf("OK") != -1)
+            if(validateResponse("OK"))
             {
                 return true;
             }
         }
-        debug("get status received failed " + resp);
 
     }
     return false;
@@ -323,15 +361,56 @@ void Sim800l::readResponse()
         Serial.println(serial->read());
 }
 
+
+
+bool Sim800l::sendCommand(const String & command ,bool validation)
+{
+    String string = "";
+    string = command + "\r\n";
+    serial->write(string.c_str());
+    delay(120);
+    string = readSerial();
+    //debug(string);
+    if (string == command || validation==false)
+    {
+        debug("sendCommand SUCCESED: " + command);
+        return true;
+    }
+    debug("sendCommand FAILED: " + command + "received: " + string);
+    return false;
+}
+
+
+void Sim800l::debug(const String & info)
+{
+    size_t n = info.length() + 8;
+    char message[n];
+    snprintf(message, n, "DEBUG: %s", info.c_str());
+    Serial.println(message);
+}
+
+bool Sim800l::
+validateResponse(const String &expectedResp)
+{
+      
+     String resp = readSerial();
+     if(resp == expectedResp)
+     {
+        return true;
+     }
+     debug("Expected:"+expectedResp + "Received: " + resp);
+     return false;
+}
+
 String Sim800l::readSerial()
 {
-    int timeout = 0;
+    unsigned int timeout = 0x2FF;
     String ret = "";
     char readed;
-    while (!serial->available() && timeout < 100)
+    while (!serial->available() && timeout)
     {
         delay(10);
-        timeout++;
+        timeout--;
     }
     for (;serial->available();delay(10))
     {
@@ -345,39 +424,13 @@ String Sim800l::readSerial()
             ret += readed;
         }
     }
-    if (ret.length() == 0)
+    if (ret.length() == 0 && timeout)
     {
         return readSerial();
     }
     return ret;
 }
 
-
-bool Sim800l::sendCommand(const String & command ,bool validation)
-{
-    String string = "";
-    string = command + "\r\n";
-    serial->write(string.c_str());
-    delay(10);
-    string = readSerial();
-    //debug(string);
-    if (string == command || validation==false)
-    {
-        debug("sendCommand SUCCESED: " + command);
-        return true;
-    }
-    debug("sendCommand FAILED: " + command);
-    return false;
-}
-
-
-void Sim800l::debug(const String & info)
-{
-    size_t n = info.length() + 8;
-    char message[n];
-    snprintf(message, n, "DEBUG: %s", info.c_str());
-    Serial.println(message);
-}
 
 String phoneFunctionalToString(phoneFunctionality functionality)
 {

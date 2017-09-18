@@ -14,8 +14,8 @@ void setup() {
   sim=new Sim800l(&serialToSim);
   delay(300);
   sim->setPhoneFunctionality(full);
-  sim->configureGPRS();
- // sim->getLocationApplication();
+  //sim->configureGPRS();
+  sim->getLocationApplication();
   //sim->productInformation();
   //String call(sim->getCallStatus());
   //String msg="call status = " + call;

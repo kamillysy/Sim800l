@@ -22,16 +22,21 @@ public:
     bool callNumber(const String &phoneNumber);
     void endTask();
 
-    void configureGPRS();
+    void configureInternet();
     void productInformation();
-    bool isSimReady();
+    bool isModuleReady();
     int getCallStatus();
     void listSMSes();
+    void ping(String &host);
+    bool waitForSimConnected(const unsigned int timeout);
 private:
+    void cloaseBearer();
     String readSerial();
     void debug(const String& info);
     bool sendCommand(const String& command,bool validation = validate);
     bool getStatus();
+    bool validateResponse(const String &expectedResp);
+    bool isSimReady();
 
     SoftwareSerial* serial;
 };

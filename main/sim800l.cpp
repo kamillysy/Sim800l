@@ -2,13 +2,17 @@
 #include "Arduino.h"
 #include <pins_arduino.h>
 #include "sim800l.h"
-Sim800l::Sim800l(SoftwareSerial *serialToSim800l)
+Sim800l::Sim800l(SoftwareSerial *serialToSim800l, const int &rstPin)
 {
+    RstPin = rstPin;
     serial = serialToSim800l;
     serial->begin(9600);
     String resp="";
     bool moduleReady=false, simStatus=false, simConnected = false;
     delay(300);
+    isModuleStarted();
+    
+
     for(unsigned counter=0;counter<10;counter++)
     {
         if(!simStatus)
@@ -168,30 +172,35 @@ bool Sim800l::callNumber(const String &phoneNumber)
     }
     return false;
 }
-void Sim800l::ping(String &host)
+void Sim800l::ping(const String &host)
 {
-  String command = "AT+CIPPING=\""+ host + ",\"4\"";
+  configureInternet();
+  String command = "AT+CIPPING=\""+ host + "\",\"4\",\"32\",\"100\",\"64\",\"12\",\"\",\"\"";
   sendCommand(command);
-  //AT+CIPPING="www.onet.pl","4","32","100","64","12","",""
+  delay(300);
+  
+  
   debug(readSerial());
+  debug(readSerial());
+  debug(readSerial());
+  debug(readSerial());
+  validateResponse("OK");
+  cloaseBearer();
 }
 
 //TODO RETURNED VALUE && VALIDATE
 void Sim800l::configureInternet()
 {
     sendCommand("AT+CSTT=\"internet\",\"\",\"\"");
-    if(validateResponse("OK"))
-    {
-        sendCommand("AT+SAPBR=3,1,\"PHONENUM\"\",\"*99#\"");
-        readResponse();
-        sendCommand("AT+CIICR");//Start wireless connection with the GPRS. 
-        if(validateResponse("OK"))
-        {
-            sendCommand("AT+CIFSR");//Gets the IP address assigned to the module
-            debug(readSerial());
-        }
+    validateResponse("OK");
+    sendCommand("AT+SAPBR=3,1,\"PHONENUM\"\",\"*99#\"");
+    debug(readSerial());
+    sendCommand("AT+CIICR");//Start wireless connection with the GPRS. 
+    validateResponse("OK");
+    sendCommand("AT+CIFSR");//Gets the IP address assigned to the module
+      debug(readSerial());
+       
         
-    }
     
     
 
@@ -318,8 +327,11 @@ bool Sim800l::isModuleReady()
 {
     if (sendCommand("AT+CPIN?"))
     {
-        String resp = readSerial();
+      if(validateResponse("+CPIN: READY"))
+      {
         return validateResponse("OK");
+      }
+        
     }
     return false;
 }
@@ -328,12 +340,20 @@ bool Sim800l::isSimReady()
 {
   bool stat= false;
   sendCommand("AT+CPAS", nonValidation);
-  delay(30);
+  delay(80);
   stat= validateResponse("+CPAS: 0");
   delay(30);
   validateResponse("OK");
   return stat;
   
+}
+void Sim800l::restartMoudule()
+{
+  debug("restartMoudule");
+   digitalWrite(RstPin,HIGH);
+   delay(1000);
+   digitalWrite(RstPin,LOW);
+   delay(1000);
 }
 
 bool Sim800l::getStatus()
@@ -388,9 +408,31 @@ void Sim800l::debug(const String & info)
     snprintf(message, n, "DEBUG: %s", info.c_str());
     Serial.println(message);
 }
+bool Sim800l::isModuleStarted()
+{
+  if(sendCommand("at"))
+  {
+     validateResponse("OK");
+     String resp = readSerial();
+     if(resp =="+CPIN: READY" || resp =="Call Ready" ||resp =="SMS Ready")
+     {
+      debug(resp + "OK");
+      resp = readSerial();
+      if(resp =="+CPIN: READY" || resp =="Call Ready" ||resp =="SMS Ready")
+      {
+       debug(resp + "OK");
+       resp = readSerial();
+       if(resp =="+CPIN: READY" || resp =="Call Ready" ||resp =="SMS Ready")
+       { 
+        debug(resp + "OK");
+       }
+     }
+    }
+  }
+ 
+}
 
-bool Sim800l::
-validateResponse(const String &expectedResp)
+bool Sim800l::validateResponse(const String &expectedResp)
 {
       
      String resp = readSerial();
@@ -415,7 +457,7 @@ String Sim800l::readSerial()
     for (;serial->available();delay(10))
     {
         readed = serial->read();
-        if (readed == (char) 26 || readed == (char) 13)
+        if (readed == (char) 26  || readed == (char) 13 || readed == (char) 18 || readed == (char) 19 || readed == (char) 10)
         {
             break;
         }

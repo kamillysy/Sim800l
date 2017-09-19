@@ -5,17 +5,21 @@
  
 //SIM800 RX is connected to Arduino D7
 #define SIM800_RX_PIN 2
+#define SIM800_RST_PIN 4
 #include "sim800l.h"
 Sim800l* sim=NULL;
 SoftwareSerial serialToSim(SIM800_TX_PIN,SIM800_RX_PIN);
 
 void setup() {
   Serial.begin(9600);
-  sim=new Sim800l(&serialToSim);
-  delay(300);
-  sim->setPhoneFunctionality(full);
+  serialToSim.begin(9600);
+  sim=new Sim800l(&serialToSim,SIM800_RST_PIN);
+  //sim->setPhoneFunctionality(full);
+  sim->ping("www.onet.pl");
+  
   //sim->configureGPRS();
   sim->getLocationApplication();
+  sim->sendSms("691525083","HOLLY SHIT");
   //sim->productInformation();
   //String call(sim->getCallStatus());
   //String msg="call status = " + call;
@@ -27,7 +31,9 @@ void setup() {
 void loop() {
   //Read SIM800 output (if available) and print it in Arduino IDE Serial Monitor
   if(serialToSim.available()){
-    Serial.write(serialToSim.read());
+    char readed = serialToSim.read();
+    Serial.write(readed);
+//    
     
   }
   //Read Arduino IDE Serial Monitor inputs (if available) and send them to SIM800

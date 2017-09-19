@@ -7,7 +7,7 @@
 class Sim800l
 {
 public:
-    Sim800l(SoftwareSerial *serialToSim800l);
+    Sim800l(SoftwareSerial *serialToSim800l, const int &rstPin );
     Sim800l(){}
 
     virtual ~Sim800l();
@@ -27,8 +27,9 @@ public:
     bool isModuleReady();
     int getCallStatus();
     void listSMSes();
-    void ping(String &host);
+    void ping(const String &host);
     bool waitForSimConnected(const unsigned int timeout);
+    void restartMoudule();
 private:
     void cloaseBearer();
     String readSerial();
@@ -37,6 +38,10 @@ private:
     bool getStatus();
     bool validateResponse(const String &expectedResp);
     bool isSimReady();
+    bool isModuleStarted();
+    
+    
+    int RstPin;
 
     SoftwareSerial* serial;
 };

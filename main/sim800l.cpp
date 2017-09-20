@@ -61,18 +61,22 @@ bool Sim800l::waitForSimConnected(const unsigned int timeout)
 //TODO NEED TO BE VALIDATED
 bool Sim800l::sendSms(const String &phoneNumber, const String &message)
 {
-    sendCommand("AT+CMGF=1");
-    String resp = readSerial();
-    debug(resp);
-    String setNumber = "AT+CMGS=\"+48" + phoneNumber + "\"";
-    sendCommand(setNumber,nonValidation);
-    sendCommand(message,nonValidation);
-    endTask();
-    resp = readSerial();
-    return true;
+    if(sendCommand("AT+CMGF=1"))
+    {
+      if(validateResponse("OK"))
+      {
+        String setNumber = "AT+CMGS=\"+48" + phoneNumber + "\"";
+        sendCommand(setNumber,nonValidation);
+        sendCommand(message,nonValidation);
+        endTask();
+        String resp = readSerial();
+        validateResponse("OK");
+        return true;
+      }
+    }
+    
 
-    debug("failed reciver");
-    debug(resp);
+   
 
     return false;
 }
@@ -296,11 +300,9 @@ void Sim800l::productInformation()
  *************************************/
 void Sim800l::endTask()
 {
-    String msg="";
-    msg.setCharAt(0, (char)26); 
-    sendCommand(msg,nonValidation); 
-    String resp = readSerial();
-    debug(resp);
+  String msg="";
+  serial->print((char)26);
+  readSerial();
 }
 
 //TODO VALIDATE
@@ -390,7 +392,7 @@ bool Sim800l::sendCommand(const String & command ,bool validation)
     serial->write(string.c_str());
     delay(120);
     string = readSerial();
-    //debug(string);
+    debug(string);
     if (string == command || validation==false)
     {
         debug("sendCommand SUCCESED: " + command);

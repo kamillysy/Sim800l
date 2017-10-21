@@ -18,7 +18,30 @@ enum phoneFunctionality{
     full=1,
     disable=4
 };
-
+struct Time{
+      unsigned int sec;
+      unsigned int min;
+      unsigned int hour;
+      unsigned int day;
+      unsigned int mon;
+      unsigned int year;
+    };
+     struct Geographical{
+      int val;
+      unsigned int hundredth;
+      String toString(){
+        return val+"."+hundredth;
+      }
+     };
+    
+      struct Possiton{
+      Geographical length; 
+      Geographical altitude;
+      String toString(){
+        return length.toString()+altitude.toString();
+      }
+    };
+   
 String phoneFunctionalToString(phoneFunctionality functionality);
 
 

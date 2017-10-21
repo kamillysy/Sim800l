@@ -58,6 +58,14 @@ bool Sim800l::waitForSimConnected(const unsigned int timeout)
   return false;
    
 }
+//void Sim800l::sendEmail()
+//{
+//  sendCommand("AT+EMAILCID=?");
+//  debug(readSerial());
+//
+//
+//}
+
 //TODO NEED TO BE VALIDATED
 bool Sim800l::sendSms(const String &phoneNumber, const String &message)
 {
@@ -203,36 +211,6 @@ void Sim800l::configureInternet()
     validateResponse("OK");
     sendCommand("AT+CIFSR");//Gets the IP address assigned to the module
       debug(readSerial());
-       
-        
-    
-    
-
-   
-
-    //
-    //
-    //
-        
-
-    //
-    //
-
-
-          
-    //
-    //
-            
-    //
-    //
-//              sendCommand("AT+SAPBR=2,1");
-//                readResponse();
-    //
-    //
-//                sendCommand("AT+FTPCID=1");
-//                  readResponse();
-//    //
-    //
 
 }
 
@@ -253,40 +231,96 @@ AT+SAPBR=2,1
  +SAPBR: 1,1,"10.89.193.1"
 OK
 *////////
-void Sim800l::getLocationApplication()
+String Sim800l::getLocationApplication()
 {
-    sendCommand("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
-    if(validateResponse("OK"))
+  String ret;
+    if(openBearer())
     {
-       sendCommand("AT+SAPBR=3,1,\"APN\",\"internet\"");
-       if(validateResponse("OK"))
-       {
-           sendCommand("AT+SAPBR =1,1");
-           validateResponse("OK");
-         
-           
-           sendCommand("AT+CIPGSMLOC=1,1");
-            debug(readSerial());
-            validateResponse("OK");
-            delay(250);
-           cloaseBearer();
-        }
-        else
-        {
-        debug(readSerial());
-        }
+      sendCommand("AT+CIPGSMLOC=1,1");
+      String response = readSerial();
+      unsigned int strPos=12;   
+      if((response.substring(strPos,strPos+1).toInt())==0)
+      {
+          strPos+=2;
+          ret = response.substring(strPos,strPos+19);
+          debug(ret);
+       }
+  
+      validateResponse("OK");
+      
     }
-    else
-    {
-       debug(readSerial());
-    }
-    //readResponse();
+    
+    delay(250);
+    cloaseBearer();
+    return ret;
+   
 }
-void Sim800l::cloaseBearer(){
+String Sim800l::getNetworkTimeGMT()
+{
+   String time;
+    if(openBearer())
+    {
+      sendCommand("AT+CIPGSMLOC=1,1");
+      String response = readSerial();
+      unsigned int strPos=12;   
+      if((response.substring(strPos,strPos+1).toInt())==0)
+      {
+          strPos+=2;
+          strPos+=1+9;
+          strPos+=1+9;
+          time = response.substring(strPos,strPos+21);
+//          strPos+=1+10;
+//          String tim = response.substring(strPos,strPos+9);
+//          
+//          strPos=0;
+//          tm.hour = (tim.substring(strPos,strPos+2)).toInt();
+//          strPos+=3;
+//          tm.min = (tim.substring(strPos,strPos+2)).toInt();
+//          strPos+=3;
+//          tm.sec = (tim.substring(strPos,strPos+2)).toInt();
+//          strPos=0;
+//          tm.year = (date.substring(strPos,strPos+4)).toInt();
+//          strPos+=5;
+//          tm.mon = (date.substring(strPos,strPos+2)).toInt();
+//          strPos+=3;
+//          tm.day = (date.substring(strPos,strPos+2)).toInt();
+//          char buff[120];
+//          sprintf(buff,"y%u m%u d%u h%u m%u s%u",tm.year,tm.mon,tm.day,tm.hour,tm.min,tm.sec);
+          debug(time);
+      
+      }
+  
+      validateResponse("OK");
+      
+    }
+    
+    delay(250);
+    cloaseBearer();
+    return time;
+    
+   
+}
+bool Sim800l::cloaseBearer(){
   sendCommand("AT+SAPBR=0,1");
+  return validateResponse("OK");
+}
+void Sim800l::setTime(const String &time)
+{
+  sendCommand("AT+CCLK="+time);
   validateResponse("OK");
 }
+void Sim800l::setNetworkTime()
+{
+  sendCommand("AT+COPS=2");
+  readSerial();
+  sendCommand("AT+COPS=0");
+  readSerial();
+  //todebug
+  sendCommand("AT+CCLK?");
+  debug(readSerial());
+  
 
+}
 void Sim800l::productInformation()
 {
     sendCommand("ATI");
@@ -392,7 +426,7 @@ bool Sim800l::sendCommand(const String & command ,bool validation)
     serial->write(string.c_str());
     delay(120);
     string = readSerial();
-    debug(string);
+    //debug(string);
     if (string == command || validation==false)
     {
         debug("sendCommand SUCCESED: " + command);
@@ -410,6 +444,7 @@ void Sim800l::debug(const String & info)
     snprintf(message, n, "DEBUG: %s", info.c_str());
     Serial.println(message);
 }
+
 bool Sim800l::isModuleStarted()
 {
   if(sendCommand("at"))
@@ -434,10 +469,10 @@ bool Sim800l::isModuleStarted()
  
 }
 
-bool Sim800l::validateResponse(const String &expectedResp)
+bool Sim800l::validateResponse(const String &expectedResp,unsigned int timeout)
 {
       
-     String resp = readSerial();
+     String resp = readSerial(timeout);
      if(resp == expectedResp)
      {
         return true;
@@ -446,9 +481,9 @@ bool Sim800l::validateResponse(const String &expectedResp)
      return false;
 }
 
-String Sim800l::readSerial()
+String Sim800l::readSerial(unsigned int timeout)
 {
-    unsigned int timeout = 0x2FF;
+    
     String ret = "";
     char readed;
     while (!serial->available() && timeout)
@@ -474,6 +509,72 @@ String Sim800l::readSerial()
     }
     return ret;
 }
+/*
+ * openBearer();      
+    sendCommand("AT+CIPGSMLOC=1,1");
+    debug(readSerial());
+    validateResponse("OK");
+    delay(250);
+    cloaseBearer();
+ * 
+ * 
+ * 
+ */
+ bool Sim800l::openBearer()
+ {
+  sendCommand("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
+  validateResponse("OK");
+  sendCommand("AT+SAPBR=3,1,\"APN\",\"internet\"");
+  validateResponse("OK");
+  sendCommand("AT+SAPBR =1,1");
+  return validateResponse("OK");   
+  
+ }
+bool Sim800l::sendEmail(const String& passWord,const String& Subject,const String& Body)
+{
+  bool ret=false;
+  openBearer();
+  sendCommand("AT+EMAILCID=1");
+  validateResponse("OK");
+  sendCommand("AT+EMAILTO=60");
+  validateResponse("OK");
+  sendCommand("AT+EMAILSSL=1");
+  validateResponse("OK");
+  sendCommand("AT+SMTPSRV=smtp.poczta.pl,465");
+  validateResponse("OK");
+  String str="AT+SMTPAUTH=1,arduinoiot@poczta.pl,"+passWord;
+  sendCommand(str);
+  validateResponse("OK");
+  sendCommand("AT+SMTPFROM=arduinoiot@poczta.pl,");
+  validateResponse("OK");
+  str="AT+SMTPSUB=\""+Subject+"\"";
+  sendCommand(str);
+  validateResponse("OK");
+  sendCommand("AT+SMTPRCPT=0,0,kamil.lasek@poczta.pl,");
+  validateResponse("OK");
+  sendCommand("AT+SMTPFILE=0");
+  validateResponse("OK");
+  
+  str="AT+SMTPBODY=9999";
+  char *cstr=&str[0];
+  sprintf(cstr,"AT+SMTPBODY=%u",Body.length());
+  sendCommand(str.c_str());
+  if(validateResponse("DOWNLOAD"))
+  {
+     serial->write(Body.c_str());
+     if(validateResponse("OK"))
+     {
+         sendCommand("AT+SMTPSEND");
+         validateResponse("OK");
+         ret=validateResponse("+SMTPSEND: 1",0xFFF);      
+     }    
+  }
+  delay(250);
+  cloaseBearer();
+  return ret;
+  
+}
+
 
 
 String phoneFunctionalToString(phoneFunctionality functionality)

@@ -18,9 +18,11 @@ public:
     void readResponse();
 
     bool setPhoneFunctionality(phoneFunctionality funcionality=full);
-    void getLocationApplication();
+    String getLocationApplication();
     bool callNumber(const String &phoneNumber);
     void endTask();
+    bool sendEmail(const String& passWord,const String& Subject,const String& Body);
+    
 
     void configureInternet();
     void productInformation();
@@ -30,13 +32,19 @@ public:
     void ping(const String &host);
     bool waitForSimConnected(const unsigned int timeout);
     void restartMoudule();
+    String getNetworkTimeGMT();
+    void setTime(const String &time);
+    void setNetworkTime();
+    
+//   / void sendEmail();
 private:
-    void cloaseBearer();
-    String readSerial();
+    bool openBearer();
+    bool cloaseBearer();
+    String readSerial(unsigned int timeout = 0x2FF);
     void debug(const String& info);
     bool sendCommand(const String& command,bool validation = validate);
     bool getStatus();
-    bool validateResponse(const String &expectedResp);
+    bool validateResponse(const String &expectedResp,unsigned int timeout = 0x2FF);
     bool isSimReady();
     bool isModuleStarted();
     
@@ -44,6 +52,8 @@ private:
     int RstPin;
 
     SoftwareSerial* serial;
+    
+    
 };
 
 #endif
